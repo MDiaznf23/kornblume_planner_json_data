@@ -1,8 +1,101 @@
 <script setup>
-defineProps({
+import { computed, watch } from 'vue'
+
+const props = defineProps({
   form: { type: Object, required: true },
   maxInsight: { type: Number, default: 3 }
 })
+
+// ---------- LEVEL ----------
+// Rule game: level mentok di 30 + (insight * 10), dan gak pernah lebih dari 60.
+function maxLevelForInsight(insight) {
+  return Math.min(60, 30 + insight * 10)
+}
+
+const maxLevelCurrent = computed(() => maxLevelForInsight(props.form.currentInsight))
+const maxLevelGoal = computed(() => maxLevelForInsight(props.form.goalInsight))
+
+watch(
+  () => props.form.currentInsight,
+  () => {
+    if (props.form.currentLevel > maxLevelCurrent.value) {
+      props.form.currentLevel = maxLevelCurrent.value
+    }
+  }
+)
+watch(
+  () => props.form.goalInsight,
+  () => {
+    if (props.form.goalLevel > maxLevelGoal.value) {
+      props.form.goalLevel = maxLevelGoal.value
+    }
+  }
+)
+watch(
+  () => props.form.currentLevel,
+  (val) => {
+    if (val > maxLevelCurrent.value) props.form.currentLevel = maxLevelCurrent.value
+    if (val < 0) props.form.currentLevel = 0
+  }
+)
+watch(
+  () => props.form.goalLevel,
+  (val) => {
+    if (val > maxLevelGoal.value) props.form.goalLevel = maxLevelGoal.value
+    if (val < 0) props.form.goalLevel = 0
+  }
+)
+
+// ---------- INSIGHT ----------
+// Batas atas beda-beda per arcanist (2-4 bintang mentok di 2, 5-6 bintang bisa sampai 3) —
+watch(
+  () => props.form.currentInsight,
+  (val) => {
+    if (val > props.maxInsight) props.form.currentInsight = props.maxInsight
+    if (val < 0) props.form.currentInsight = 0
+  }
+)
+watch(
+  () => props.form.goalInsight,
+  (val) => {
+    if (val > props.maxInsight) props.form.goalInsight = props.maxInsight
+    if (val < 0) props.form.goalInsight = 0
+  }
+)
+
+// ---------- RESONANCE ----------
+// CATATAN: perhitungan resonance di sini SENGAJA dibatasi flat maks 10,
+const RESONANCE_CAP = 10
+
+watch(
+  () => props.form.currentInsight,
+  (val) => {
+    if (val === 0) props.form.currentResonance = 0
+  }
+)
+watch(
+  () => props.form.goalInsight,
+  (val) => {
+    if (val === 0) props.form.goalResonance = 0
+  }
+)
+watch(
+  () => props.form.currentResonance,
+  (val) => {
+    if (val > RESONANCE_CAP) props.form.currentResonance = RESONANCE_CAP
+    if (val < 0) props.form.currentResonance = 0
+    if (props.form.goalResonance < props.form.currentResonance) {
+      props.form.goalResonance = props.form.currentResonance
+    }
+  }
+)
+watch(
+  () => props.form.goalResonance,
+  (val) => {
+    if (val > RESONANCE_CAP) props.form.goalResonance = RESONANCE_CAP
+    if (val < 0) props.form.goalResonance = 0
+  }
+)
 </script>
 
 <template>
@@ -12,11 +105,23 @@ defineProps({
       <div class="field-group">
         <label class="field">
           <span>Level sekarang</span>
-          <input v-model.number="form.currentLevel" type="number" min="0" max="60" />
+          <input
+            v-model.number="form.currentLevel"
+            type="number"
+            min="0"
+            :max="maxLevelCurrent"
+          />
+          <small class="field__hint">maks {{ maxLevelCurrent }} di insight {{ form.currentInsight }}</small>
         </label>
         <label class="field">
           <span>Level tujuan</span>
-          <input v-model.number="form.goalLevel" type="number" min="0" max="60" />
+          <input
+            v-model.number="form.goalLevel"
+            type="number"
+            min="0"
+            :max="maxLevelGoal"
+          />
+          <small class="field__hint">maks {{ maxLevelGoal }} di insight {{ form.goalInsight }}</small>
         </label>
       </div>
       <div class="field-group field-group--divider">
@@ -32,14 +137,31 @@ defineProps({
       <div class="field-group field-group--divider">
         <label class="field">
           <span>Resonance sekarang</span>
-          <input v-model.number="form.currentResonance" type="number" min="0" max="10" />
+          <input
+            v-model.number="form.currentResonance"
+            type="number"
+            min="0"
+            :max="RESONANCE_CAP"
+            :disabled="form.currentInsight === 0"
+          />
         </label>
         <label class="field">
           <span>Resonance tujuan</span>
-          <input v-model.number="form.goalResonance" type="number" min="0" max="10" />
+          <input
+            v-model.number="form.goalResonance"
+            type="number"
+            min="0"
+            :max="RESONANCE_CAP"
+            :disabled="form.goalInsight === 0"
+          />
         </label>
       </div>
     </div>
+    <p class="target__note">
+      ⚠ Perhitungan resonance di planner ini baru mendukung sampai maks
+      <strong>10</strong>. Arcanist insight 3 yang aslinya bisa resonance
+      sampai 15 belum ke-cover penuh.
+    </p>
 
     <div class="target__divider">
       <span>Wilderness · produksi harian</span>
@@ -125,6 +247,28 @@ defineProps({
 
 .field input:focus-visible {
   border-color: var(--brass);
+}
+
+.field input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.field__hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--paper-faint);
+}
+
+.target__note {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  background: rgba(181, 83, 60, 0.12);
+  border: 1px solid rgba(181, 83, 60, 0.4);
+  border-radius: var(--radius-sm);
+  color: var(--rust);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .target__divider {
