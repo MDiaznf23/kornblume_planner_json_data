@@ -158,4 +158,14 @@ thead th {
   padding: 20px 4px;
   font-size: 13.5px;
 }
+
+@media (max-width: 640px) {
+  table {
+    font-size: 12px;
+  }
+  thead th,
+  .stage-row td {
+    padding: 7px 6px;
+  }
+}
 </style>

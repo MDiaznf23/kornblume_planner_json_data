@@ -259,4 +259,16 @@ function onImgError(e) {
   font-size: 12.5px;
   font-family: var(--font-mono);
 }
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .dialog {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+}
 </style>

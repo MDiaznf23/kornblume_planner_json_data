@@ -478,4 +478,43 @@ const tabs = [
     max-height: 240px;
   }
 }
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 12px 16px;
+  }
+  .topbar__title {
+    font-size: 19px;
+  }
+  .topbar__subtitle {
+    display: none;
+  }
+  .topbar__credit {
+    display: none;
+  }
+  .body__main {
+    padding: 14px 14px 32px;
+  }
+  .arc-header__name {
+    font-size: 21px;
+  }
+  .toolbar {
+    gap: 8px;
+  }
+  .toolbar .btn {
+    flex: 1 1 auto;
+    font-size: 12.5px;
+    padding: 9px 10px;
+  }
+  .toolbar__spacer {
+    display: none;
+  }
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tabs__btn {
+    white-space: nowrap;
+  }
+}
 </style>

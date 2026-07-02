@@ -137,4 +137,23 @@ defineProps({
   border-top: 1px dashed var(--ink-600);
   padding-top: 12px;
 }
+
+@media (max-width: 640px) {
+  .target__row {
+    flex-direction: column;
+  }
+  .field-group {
+    grid-template-columns: 1fr 1fr;
+    padding: 10px 0;
+    border-left: none !important;
+    border-top: 1px dashed var(--ink-600);
+  }
+  .field-group:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  .target__grid--wild {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 </style>
