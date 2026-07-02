@@ -1,0 +1,149 @@
+/* ============================================================
+   Design tokens — tema "Manifest Perjalanan" (Reverse: 1999)
+   Palet: badai malam navy + kuningan usang + kertas tua
+   ============================================================ */
+:root {
+  --ink-950: #10171f;
+  --ink-900: #16202b;
+  --ink-800: #1e2c3a;
+  --ink-700: #283a4b;
+  --ink-600: #3a5064;
+
+  --brass: #c19a4b;
+  --brass-bright: #e0b968;
+  --rust: #b5533c;
+  --storm: #4a7a8c;
+  --storm-bright: #6fa3b5;
+
+  --paper: #ece4d3;
+  --paper-dim: #b9c2c9;
+  --paper-faint: #7c8996;
+
+  --font-display: 'Cormorant Garamond', 'Georgia', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 800px at 15% -10%, rgba(74, 122, 140, 0.16), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(193, 154, 75, 0.1), transparent 55%),
+    var(--ink-950);
+  color: var(--paper);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+/* focus visibility, kept everywhere for accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brass-bright);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-600);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--storm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------- Global button styles (dipakai lintas komponen) ---------------- */
+.btn {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: filter 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+.btn:hover {
+  filter: brightness(1.08);
+}
+.btn:active {
+  filter: brightness(0.95);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.btn--primary {
+  background: var(--brass);
+  color: var(--ink-950);
+  border-color: var(--brass);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--paper-dim);
+  border-color: var(--ink-600);
+}
+.btn--ghost:hover {
+  color: var(--paper);
+  border-color: var(--storm-bright);
+}
+
+.btn--outline {
+  background: transparent;
+  color: var(--storm-bright);
+  border-color: var(--storm);
+}
+.btn--outline:hover {
+  background: rgba(74, 122, 140, 0.12);
+}
