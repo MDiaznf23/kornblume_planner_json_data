@@ -71,12 +71,6 @@ const computeError = ref(null)
 const computing = ref(false)
 const activeTab = ref('resource')
 
-// CATATAN: runPlanner() dipanggil langsung di main thread (bukan dibungkus Worker
-// kita sendiri). glpk.js SUDAH bikin Worker sendiri secara internal untuk proses
-// solve LP yang berat, jadi UI tetap responsif tanpa perlu wrapper tambahan.
-// Sempat dicoba bungkus dengan Worker sendiri, tapi itu berarti Worker di dalam
-// Worker (nested) yang dukungannya gak konsisten di semua browser dan malah bikin
-// prosesnya menggantung tanpa pernah selesai/error.
 async function compute() {
   computeError.value = null
   if (!selectedArc.value || computing.value) return

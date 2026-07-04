@@ -96,8 +96,7 @@ watch(
     if (val < 0) props.form.goalResonance = 0
   }
 )
-// maxInsight bisa berubah kalau arcanist yang dipilih ganti (mis. 5★ -> 4★), jadi cap resonance
-// harus di-recheck juga saat itu terjadi supaya value lama yang > cap baru ikut ke-clamp.
+// maxInsight bisa berubah kalau arcanist yang dipilih ganti (mis. 5★ -> 4★), jadi cap resonance harus di-recheck juga saat itu terjadi supaya value lama yang > cap baru ikut ke-clamp.
 watch(
   () => props.maxInsight,
   () => {
