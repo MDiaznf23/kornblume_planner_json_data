@@ -490,6 +490,25 @@ const tabs = [
     border-right: none;
     border-bottom: 1px solid var(--ink-700);
     max-height: 240px;
+    overflow: hidden;
+  }
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .toolbar__spacer {
+    display: none;
+  }
+  .toolbar .btn {
+    width: 100%;
+  }
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs__btn {
+    flex-shrink: 0;
   }
 }
 </style>
