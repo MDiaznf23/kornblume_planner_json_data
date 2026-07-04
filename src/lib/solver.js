@@ -1,11 +1,12 @@
-// Translasi 1:1 dari kornblume 
-// Sumber algoritma asli: src/composables/glpkSolver.ts (proyek Kornblume).
-//
-// `javascript-lp-solver` (pure JS, branch & bound untuk variabel integer) sebagai pengganti, secara matematis model LP/MIP-nya sama persis (constraint & objective disusun dengan logika yang identik ke glpkSolver.ts), hanya mesin solver-nya beda.
-
-import solverLib from 'javascript-lp-solver'
+import GLPK from '#glpk'
 import { DAILY_ACTIVITY, RESONANCE_MATERIALS } from './constants.js'
 import { pythonRound1 } from './utils.js'
+
+let glpkPromise = null
+function getGlpk() {
+  if (!glpkPromise) glpkPromise = GLPK()
+  return glpkPromise
+}
 
 /**
  * @param {Record<string, number>} materialNeeds
@@ -14,21 +15,28 @@ import { pythonRound1 } from './utils.js'
  * @param {Record<string, number>} warehouse
  * @param {number} dailyActivity
  */
-export function solveFarmingPlan(materialNeeds, formulas, stages, warehouse = {}, dailyActivity = DAILY_ACTIVITY) {
+export async function solveFarmingPlan(materialNeeds, formulas, stages, warehouse = {}, dailyActivity = DAILY_ACTIVITY) {
+  const glpk = await getGlpk()
+
   const stageNames = Object.keys(stages)
   const stageVarName = (name) => `stage__${name}`
   const craftFormulas = formulas.filter((f) => f.Material && f.Material.length)
   const craftVarName = (name) => `craft__${name}`
 
-  const variables = {}
-  const ints = {}
+  const objectiveCoefs = {} // varName -> coef
+  const constraintCoefs = {} // constraintName -> { varName -> coef }
+  const integerVars = new Set()
+
+  function addCoef(constraintName, varName, coef) {
+    if (!constraintCoefs[constraintName]) constraintCoefs[constraintName] = {}
+    constraintCoefs[constraintName][varName] = (constraintCoefs[constraintName][varName] || 0) + coef
+  }
 
   for (const name of stageNames) {
-    variables[stageVarName(name)] = { objective: stages[name].cost }
+    objectiveCoefs[stageVarName(name)] = stages[name].cost
   }
   for (const f of craftFormulas) {
-    variables[craftVarName(f.Name)] = { objective: 0 }
-    ints[craftVarName(f.Name)] = 1
+    integerVars.add(craftVarName(f.Name))
   }
 
   const allMaterials = new Set(Object.keys(materialNeeds))
@@ -40,13 +48,14 @@ export function solveFarmingPlan(materialNeeds, formulas, stages, warehouse = {}
     for (const m of Object.keys(info.drops)) allMaterials.add(m)
   }
 
-  const constraints = {}
+  const bounds = {} // constraintName -> needed (lower bound)
 
   for (const mat of allMaterials) {
     if (RESONANCE_MATERIALS.has(mat)) continue
 
     let hasProduced = false
     let hasConsumed = false
+    const cname = `need__${mat}`
 
     for (const name of stageNames) {
       const info = stages[name]
@@ -54,44 +63,58 @@ export function solveFarmingPlan(materialNeeds, formulas, stages, warehouse = {}
       const rate = mat in info.drops && count ? info.drops[mat] / count : 0
       if (rate) {
         hasProduced = true
-        const v = variables[stageVarName(name)]
-        v[`need__${mat}`] = (v[`need__${mat}`] || 0) + rate
+        addCoef(cname, stageVarName(name), rate)
       }
     }
 
     for (const f of formulas) {
-      const cv = variables[craftVarName(f.Name)]
-      if (!cv) continue
+      const varName = craftVarName(f.Name)
+      if (!integerVars.has(varName)) continue
       if (f.Name === mat) {
         hasProduced = true
-        cv[`need__${mat}`] = (cv[`need__${mat}`] || 0) + 1
+        addCoef(cname, varName, 1)
       }
       const idx = f.Material.indexOf(mat)
       if (idx !== -1) {
         hasConsumed = true
-        cv[`need__${mat}`] = (cv[`need__${mat}`] || 0) - f.Quantity[idx]
+        addCoef(cname, varName, -f.Quantity[idx])
       }
     }
 
     const needed = (materialNeeds[mat] || 0) - (warehouse[mat] || 0)
     if (hasProduced || hasConsumed || needed > 0) {
-      constraints[`need__${mat}`] = { min: needed }
+      bounds[cname] = needed
     }
   }
 
-  const model = {
-    optimize: 'objective',
-    opType: 'min',
-    constraints,
-    variables,
-    ints
+  const lp = {
+    name: 'farming-plan',
+    objective: {
+      direction: glpk.GLP_MIN,
+      name: 'obj',
+      vars: Object.entries(objectiveCoefs).map(([name, coef]) => ({ name, coef }))
+    },
+    subjectTo: Object.entries(bounds).map(([cname, lb]) => ({
+      name: cname,
+      vars: Object.entries(constraintCoefs[cname] || {}).map(([name, coef]) => ({ name, coef })),
+      bnds: { type: glpk.GLP_LO, ub: 0, lb }
+    })),
+    generals: [...integerVars]
   }
 
-  const result = solverLib.Solve(model)
+  const { result } = await glpk.solve(lp, {
+    msglev: glpk.GLP_MSG_OFF,
+    presol: true,
+    tmlim: 20, // detik -- batas keras, sama semangatnya dengan timeout sebelumnya
+    mipgap: 0.0
+  })
 
+  const vars = result.vars || {}
+
+  // ---- bentuk kartu hasil, persis logika getPlan() di planner.ts ----
   const plan = {}
   for (const name of stageNames) {
-    const rawVal = result[stageVarName(name)] || 0
+    const rawVal = vars[stageVarName(name)] || 0
     if (rawVal > 0.0001) {
       const info = stages[name]
       const runs = Math.ceil(rawVal)
@@ -107,6 +130,8 @@ export function solveFarmingPlan(materialNeeds, formulas, stages, warehouse = {}
         if (qty > 0) materials[mat] = qty
       }
 
+      // Kalau setelah pembulatan material-nya kosong, stage ini dibuang seluruhnya
+      // (meniru filter `card.materials.length > 0` di planner.ts).
       if (Object.keys(materials).length === 0) continue
 
       plan[name] = { runs, activity, days, materials }
@@ -115,18 +140,18 @@ export function solveFarmingPlan(materialNeeds, formulas, stages, warehouse = {}
 
   const crafting = {}
   for (const f of craftFormulas) {
-    const val = result[craftVarName(f.Name)] || 0
+    const val = vars[craftVarName(f.Name)] || 0
     if (val > 0.001) crafting[f.Name] = Math.round(val)
   }
 
-  return { plan, crafting, objective: result.result }
+  return { plan, crafting, objective: result.z }
 }
 
 /**
  * STEP 4: Poussiere VI / Mintage Aesthetics VI override.
  * Meniru processSharpoAndDust() di glpkSolver.ts.
  */
-export function processDustSharpo(
+export async function processDustSharpo(
   plan,
   crafting,
   formulas,
@@ -136,6 +161,8 @@ export function processDustSharpo(
   wildernessDailyGold,
   dailyActivity = DAILY_ACTIVITY
 ) {
+  const glpk = await getGlpk()
+
   const formulaLastQty = {}
   for (const f of formulas) {
     formulaLastQty[f.Name] = f.Quantity && f.Quantity.length ? f.Quantity[f.Quantity.length - 1] : 0
@@ -178,23 +205,41 @@ export function processDustSharpo(
   const mintageDust = 0 + round1((wildernessDailyDust * 25) / DAILY_ACTIVITY)
   const mintageSharpo = 9000 + round1((wildernessDailyGold * 25) / DAILY_ACTIVITY)
 
-  const model = {
-    optimize: 'objective',
-    opType: 'min',
-    constraints: {
-      sharpo: { min: remainingSharpo },
-      dust: { min: remainingDust }
+  const lp = {
+    name: 'poussiere-mintage',
+    objective: {
+      direction: glpk.GLP_MIN,
+      name: 'obj',
+      vars: [
+        { name: 'poussiere', coef: 25 },
+        { name: 'mintage', coef: 25 }
+      ]
     },
-    variables: {
-      poussiere: { objective: 25, sharpo: poussiereSharpo, dust: poussiereDust },
-      mintage: { objective: 25, sharpo: mintageSharpo, dust: mintageDust }
-    },
-    ints: { poussiere: 1, mintage: 1 }
+    subjectTo: [
+      {
+        name: 'sharpo',
+        vars: [
+          { name: 'poussiere', coef: poussiereSharpo },
+          { name: 'mintage', coef: mintageSharpo }
+        ],
+        bnds: { type: glpk.GLP_LO, ub: 0, lb: remainingSharpo }
+      },
+      {
+        name: 'dust',
+        vars: [
+          { name: 'poussiere', coef: poussiereDust },
+          { name: 'mintage', coef: mintageDust }
+        ],
+        bnds: { type: glpk.GLP_LO, ub: 0, lb: remainingDust }
+      }
+    ],
+    generals: ['poussiere', 'mintage']
   }
 
-  const result = solverLib.Solve(model)
-  const dustRuns = Math.round(result.poussiere || 0)
-  const sharpoRuns = Math.round(result.mintage || 0)
+  const { result } = await glpk.solve(lp, { msglev: glpk.GLP_MSG_OFF, presol: true, tmlim: 5 })
+  const vars = result.vars || {}
+  const dustRuns = Math.round(vars.poussiere || 0)
+  const sharpoRuns = Math.round(vars.mintage || 0)
 
   const specialCards = {}
   if (dustRuns > 0) {

@@ -64,8 +64,8 @@ watch(
 )
 
 // ---------- RESONANCE ----------
-// CATATAN: perhitungan resonance di sini SENGAJA dibatasi flat maks 10,
-const RESONANCE_CAP = 10
+// Rule asli: resonance maksimal 15 untuk arcanist 5-6 bintang (maxInsight 3), dan 10 untuk arcanist di bawahnya (maxInsight 2)
+const RESONANCE_CAP = computed(() => (props.maxInsight >= 3 ? 15 : 10))
 
 watch(
   () => props.form.currentInsight,
@@ -82,7 +82,7 @@ watch(
 watch(
   () => props.form.currentResonance,
   (val) => {
-    if (val > RESONANCE_CAP) props.form.currentResonance = RESONANCE_CAP
+    if (val > RESONANCE_CAP.value) props.form.currentResonance = RESONANCE_CAP.value
     if (val < 0) props.form.currentResonance = 0
     if (props.form.goalResonance < props.form.currentResonance) {
       props.form.goalResonance = props.form.currentResonance
@@ -92,8 +92,20 @@ watch(
 watch(
   () => props.form.goalResonance,
   (val) => {
-    if (val > RESONANCE_CAP) props.form.goalResonance = RESONANCE_CAP
+    if (val > RESONANCE_CAP.value) props.form.goalResonance = RESONANCE_CAP.value
     if (val < 0) props.form.goalResonance = 0
+  }
+)
+// maxInsight bisa berubah kalau arcanist yang dipilih ganti (mis. 5★ -> 4★), jadi cap resonance harus di-recheck juga saat itu terjadi supaya value lama yang > cap baru ikut ke-clamp.
+watch(
+  () => props.maxInsight,
+  () => {
+    if (props.form.currentResonance > RESONANCE_CAP.value) {
+      props.form.currentResonance = RESONANCE_CAP.value
+    }
+    if (props.form.goalResonance > RESONANCE_CAP.value) {
+      props.form.goalResonance = RESONANCE_CAP.value
+    }
   }
 )
 </script>
@@ -144,6 +156,7 @@ watch(
             :max="RESONANCE_CAP"
             :disabled="form.currentInsight === 0"
           />
+          <small class="field__hint">maks {{ RESONANCE_CAP }}</small>
         </label>
         <label class="field">
           <span>Resonance tujuan</span>
@@ -154,14 +167,10 @@ watch(
             :max="RESONANCE_CAP"
             :disabled="form.goalInsight === 0"
           />
+          <small class="field__hint">maks {{ RESONANCE_CAP }}</small>
         </label>
       </div>
     </div>
-    <p class="target__note">
-      ⚠ Perhitungan resonance di planner ini baru mendukung sampai maks
-      <strong>10</strong>. Arcanist insight 3 yang aslinya bisa resonance
-      sampai 15 belum ke-cover penuh.
-    </p>
 
     <div class="target__divider">
       <span>Wilderness · produksi harian</span>

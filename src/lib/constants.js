@@ -1,4 +1,3 @@
-// Konstanta hasil translasi 1:1 dari kornblume
 // Sumber asli: src/constants/resources.ts (proyek Kornblume, windbow27)
 
 export const DAILY_ACTIVITY = 240 // default dari src/stores/activityStore.ts

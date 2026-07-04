@@ -1,9 +1,7 @@
-// Fungsi ini mereplikasi round(x, 1) Python secara presisi.
 export function pythonRound1(x) {
   if (!Number.isFinite(x)) return x
   const neg = x < 0
   const ax = Math.abs(x)
-
   const s = ax.toFixed(20)
   const [ip, fp] = s.split('.')
   const d1 = fp.charCodeAt(0) - 48

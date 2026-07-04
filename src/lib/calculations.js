@@ -75,8 +75,7 @@ export function calculateExp(arcInput, levelUpResources, rarity) {
 }
 
 /**
- * Frequency (skill grid) BUKAN range current->goal seperti Insight/Resonance,
- * tapi CHECKLIST: `selected` adalah daftar node {Type, Id} yang dipilih user.
+ * Frequency (skill grid) 
  */
 export function calculateFrequencyMaterials(selected, freqList) {
   const materialsCount = {}

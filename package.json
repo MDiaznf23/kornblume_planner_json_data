@@ -8,14 +8,22 @@
     "build": "vite build",
     "preview": "vite preview",
     "refresh-assets": "node scripts/fetch-assets.mjs",
-    "test:aleph": "node scripts/test-aleph.mjs"
+    "test:aleph": "node scripts/test-aleph.mjs",
+    "test:stress": "node scripts/test-stress.mjs"
   },
   "dependencies": {
-    "javascript-lp-solver": "^1.0.3",
+    "glpk.js": "^5.0.0",
     "vue": "^3.5.39"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.7",
     "vite": "^8.1.1"
+  },
+  "imports": {
+    "#glpk": {
+      "browser": "glpk.js",
+      "node": "glpk.js/node",
+      "default": "glpk.js/node"
+    }
   }
 }

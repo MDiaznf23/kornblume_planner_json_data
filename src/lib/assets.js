@@ -1,3 +1,5 @@
+// Helper path aset yang menghormati Vite `base` 
+// page di https://<user>.github.io/<repo>/ — base bukan root "/").
 export function assetUrl(path) {
   const base = import.meta.env.BASE_URL || '/'
   return base.replace(/\/$/, '') + '/' + path.replace(/^\//, '')

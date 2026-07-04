@@ -1,4 +1,4 @@
-// Translasi 1:1 dari kornblume — WRAPPER
+// Translasi 1:1 dari Kornblume
 
 import { DAILY_ACTIVITY } from './constants.js'
 import { pythonRound1 } from './utils.js'
@@ -15,7 +15,7 @@ function toCardList(stageDict) {
   }))
 }
 
-export function runPlanner({
+export async function runPlanner({
   arcId,
   currentLevel,
   goalLevel,
@@ -44,9 +44,9 @@ export function runPlanner({
 
   const { needs, arcInfo } = getTotalMaterialNeeds(arcInput, arcanists, levelUpResources, frequencySelected)
 
-  const { plan, crafting } = solveFarmingPlan(needs, formulas, stages, warehouse)
+  const { plan, crafting } = await solveFarmingPlan(needs, formulas, stages, warehouse)
 
-  const { otherStageCards, specialCards } = processDustSharpo(
+  const { otherStageCards, specialCards } = await processDustSharpo(
     plan,
     crafting,
     formulas,

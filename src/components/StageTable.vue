@@ -1,12 +1,14 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { itemIconUrl } from '../lib/assets.js'
 
-defineProps({
+const props = defineProps({
   cards: { type: Array, required: true },
   nameToItemId: { type: Object, default: () => ({}) },
   emptyLabel: { type: String, default: 'Tidak ada stage di kategori ini.' }
 })
+
+const sortedCards = computed(() => [...props.cards].sort((a, b) => b.activity - a.activity))
 
 const activeIdx = ref(null)
 
@@ -21,7 +23,7 @@ function onImgError(e) {
 
 <template>
   <div class="stage-table">
-    <table v-if="cards.length">
+    <table v-if="sortedCards.length">
       <thead>
         <tr>
           <th>Stage</th>
@@ -32,7 +34,7 @@ function onImgError(e) {
         </tr>
       </thead>
       <tbody>
-        <template v-for="(c, idx) in cards" :key="c.stage">
+        <template v-for="(c, idx) in sortedCards" :key="c.stage">
           <tr
             class="stage-row"
             :class="{ 'stage-row--active': activeIdx === idx }"
@@ -157,15 +159,5 @@ thead th {
   color: var(--paper-faint);
   padding: 20px 4px;
   font-size: 13.5px;
-}
-
-@media (max-width: 640px) {
-  table {
-    font-size: 12px;
-  }
-  thead th,
-  .stage-row td {
-    padding: 7px 6px;
-  }
 }
 </style>

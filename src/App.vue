@@ -68,13 +68,23 @@ const frequencyFilledCount = computed(() => frequencySelected.value.length)
 
 const result = ref(null)
 const computeError = ref(null)
+const computing = ref(false)
 const activeTab = ref('resource')
 
-function compute() {
+// CATATAN: runPlanner() dipanggil langsung di main thread (bukan dibungkus Worker
+// kita sendiri). glpk.js SUDAH bikin Worker sendiri secara internal untuk proses
+// solve LP yang berat, jadi UI tetap responsif tanpa perlu wrapper tambahan.
+// Sempat dicoba bungkus dengan Worker sendiri, tapi itu berarti Worker di dalam
+// Worker (nested) yang dukungannya gak konsisten di semua browser dan malah bikin
+// prosesnya menggantung tanpa pernah selesai/error.
+async function compute() {
   computeError.value = null
-  if (!selectedArc.value) return
+  if (!selectedArc.value || computing.value) return
+  computing.value = true
+  result.value = null
+
   try {
-    const { output } = runPlanner({
+    const { output } = await runPlanner({
       arcId: selectedArc.value.Id,
       currentLevel: form.currentLevel,
       goalLevel: form.goalLevel,
@@ -94,7 +104,9 @@ function compute() {
     result.value = output
     activeTab.value = 'resource'
   } catch (e) {
-    computeError.value = e.message || String(e)
+    computeError.value = e?.message || String(e)
+  } finally {
+    computing.value = false
   }
 }
 
@@ -173,7 +185,9 @@ const tabs = [
             Edit Warehouse ({{ warehouseFilledCount }} item terisi)
           </button>
           <span class="toolbar__spacer" />
-          <button type="button" class="btn btn--primary" @click="compute">Hitung</button>
+          <button type="button" class="btn btn--primary" :disabled="computing" @click="compute">
+            {{ computing ? 'Menghitung…' : 'Hitung' }}
+          </button>
           <button type="button" class="btn btn--ghost" :disabled="!result" @click="exportJson">
             Simpan JSON…
           </button>
@@ -476,45 +490,6 @@ const tabs = [
     border-right: none;
     border-bottom: 1px solid var(--ink-700);
     max-height: 240px;
-  }
-}
-
-@media (max-width: 640px) {
-  .topbar {
-    padding: 12px 16px;
-  }
-  .topbar__title {
-    font-size: 19px;
-  }
-  .topbar__subtitle {
-    display: none;
-  }
-  .topbar__credit {
-    display: none;
-  }
-  .body__main {
-    padding: 14px 14px 32px;
-  }
-  .arc-header__name {
-    font-size: 21px;
-  }
-  .toolbar {
-    gap: 8px;
-  }
-  .toolbar .btn {
-    flex: 1 1 auto;
-    font-size: 12.5px;
-    padding: 9px 10px;
-  }
-  .toolbar__spacer {
-    display: none;
-  }
-  .tabs {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-  }
-  .tabs__btn {
-    white-space: nowrap;
   }
 }
 </style>

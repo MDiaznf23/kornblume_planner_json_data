@@ -222,16 +222,4 @@ function onImgError(e) {
   padding: 14px 20px;
   border-top: 1px solid var(--ink-700);
 }
-
-@media (max-width: 640px) {
-  .overlay {
-    padding: 0;
-    align-items: flex-end;
-  }
-  .dialog {
-    width: 100%;
-    max-height: 88vh;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-  }
-}
 </style>
