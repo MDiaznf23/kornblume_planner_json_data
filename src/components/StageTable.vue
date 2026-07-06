@@ -16,6 +16,19 @@ function toggle(idx) {
   activeIdx.value = activeIdx.value === idx ? null : idx
 }
 
+// Ringkas daftar material di baris 
+const MATS_PREVIEW_COUNT = 3
+
+function matsSummary(materials) {
+  if (!materials.length) return '—'
+  const label = (m) => `${m.Material}:${m.Quantity}`
+  if (materials.length <= MATS_PREVIEW_COUNT) {
+    return materials.map(label).join(', ')
+  }
+  const shown = materials.slice(0, MATS_PREVIEW_COUNT).map(label).join(', ')
+  return `${shown} +${materials.length - MATS_PREVIEW_COUNT} lainnya`
+}
+
 function onImgError(e) {
   e.target.style.visibility = 'hidden'
 }
@@ -45,7 +58,8 @@ function onImgError(e) {
             <td class="mono">{{ c.activity }}</td>
             <td class="mono">{{ c.days }}</td>
             <td class="stage-row__mats">
-              {{ c.materials.map((m) => `${m.Material}:${m.Quantity}`).join(', ') }}
+              <span class="stage-row__mats-text">{{ matsSummary(c.materials) }}</span>
+              <span class="stage-row__mats-hint">{{ activeIdx === idx ? '▲ tutup' : '▼ detail' }}</span>
             </td>
           </tr>
           <tr v-if="activeIdx === idx" class="preview-row">
@@ -118,6 +132,23 @@ thead th {
 
 .stage-row__mats {
   color: var(--paper-dim);
+  max-width: 320px;
+}
+
+.stage-row__mats-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stage-row__mats-hint {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--brass);
 }
 
 .mono {
@@ -159,5 +190,11 @@ thead th {
   color: var(--paper-faint);
   padding: 20px 4px;
   font-size: 13.5px;
+}
+
+@media (max-width: 760px) {
+  .stage-row__mats {
+    max-width: 220px;
+  }
 }
 </style>

@@ -483,8 +483,12 @@ const tabs = [
   .body__picker {
     border-right: none;
     border-bottom: 1px solid var(--ink-700);
-    max-height: 240px;
-    overflow: hidden;
+    max-height: none;
+    padding: 8px 4px;
+    min-width: 0;
+  }
+  .body__main {
+    min-width: 0;
   }
   .toolbar {
     display: grid;
