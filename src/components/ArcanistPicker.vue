@@ -325,23 +325,23 @@ function onImgError(e) {
 
   .picker__list {
     flex-direction: row;
-    overflow-x: hidden;
-    overflow-y: visible;
-    padding: 2px 2px 8px;
-    gap: 8px;
+    overflow: visible;
+    padding: 2px 4px 8px;
+    gap: 6px;
     min-width: 0;
     flex: 1;
-    justify-content: center;
   }
 
   .picker__list li {
-    flex-shrink: 0;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .picker__item {
+    box-sizing: border-box;
     flex-direction: column;
-    width: 66px;
-    padding: 6px 4px 7px;
+    width: 100%;
+    padding: 6px 2px 7px;
     gap: 5px;
     text-align: center;
   }
@@ -349,6 +349,7 @@ function onImgError(e) {
   .picker__icon {
     width: 44px;
     height: 44px;
+    max-width: 100%;
   }
 
   .picker__name {
